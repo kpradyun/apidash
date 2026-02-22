@@ -1,4 +1,5 @@
 import 'package:apidash/models/models.dart';
+import 'package:apidash_core/apidash_core.dart';
 import '../../constants.dart';
 import '../../models/models.dart';
 import '../../prompts/prompts.dart' as dash;
@@ -12,11 +13,7 @@ class PromptBuilder {
   }) {
     final historyBlock = buildHistoryBlock(history);
     final contextBlock = buildContextBlock(req);
-    final task = buildTaskPrompt(
-      req,
-      type,
-      overrideLanguage: overrideLanguage,
-    );
+    final task = buildTaskPrompt(req, type, overrideLanguage: overrideLanguage);
     return [
       if (task != null) task,
       if (contextBlock != null) contextBlock,
@@ -40,7 +37,10 @@ class PromptBuilder {
   }
 
   String? buildContextBlock(RequestModel? req) {
-    final http = req?.httpRequestModel;
+    var http = req?.httpRequestModel;
+    if (req?.apiType == APIType.ai) {
+      http = req?.aiRequestModel?.httpRequestModel;
+    }
     if (req == null || http == null) return null;
     final headers = http.headersMap.entries
         .map((e) => '"${e.key}": "${e.value}"')
@@ -63,7 +63,10 @@ class PromptBuilder {
     String? overrideLanguage,
   }) {
     if (req == null) return null;
-    final http = req.httpRequestModel;
+    var http = req.httpRequestModel;
+    if (req.apiType == APIType.ai) {
+      http = req.aiRequestModel?.httpRequestModel;
+    }
     final resp = req.httpResponseModel;
     final prompts = dash.DashbotPrompts();
     switch (type) {
